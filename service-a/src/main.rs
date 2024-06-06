@@ -12,6 +12,11 @@ pub struct Prefix {
     p: Option<String>,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+pub struct HealthCheck {
+    status: String,
+}
+
 #[tokio::main]
 async fn main() {
     tracing_subscriber::fmt()
@@ -21,8 +26,10 @@ async fn main() {
         .without_time()
         .init();
     let port = std::env::var("PORT").expect("PORT is required");
-    let host = format!("127.0.0.1:{}", port);
-    let app = Router::new().route("/route", get(handler));
+    let host = format!("0.0.0.0:{}", port);
+    let app = Router::new()
+        .route("/route", get(handler))
+        .route("/health", get(health));
     let listener = tokio::net::TcpListener::bind(host).await.unwrap();
     tracing::info!("Up and running ... listening on {}", port);
     axum::serve(listener, app).await.unwrap();
@@ -45,4 +52,12 @@ async fn handler(query: Query<Prefix>) -> Result<impl IntoResponse, StatusCode> 
     };
 
     Ok(Json(m))
+}
+
+async fn health() -> Result<impl IntoResponse, StatusCode> {
+    let healthy = HealthCheck {
+        status: String::from("Healthy"),
+    };
+
+    Ok(Json(healthy))
 }

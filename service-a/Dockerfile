@@ -1,11 +1,43 @@
-FROM rust:1.78
+FROM rust:latest AS builder
 
-# 2. Copy the files in your machine to the Docker image
-COPY ./ ./
+RUN update-ca-certificates
 
-# Build your program for release
+# Create appuser
+ENV USER=app_user
+ENV UID=10001
+
+RUN adduser \
+    --disabled-password \
+    --gecos "" \
+    --home "/nonexistent" \
+    --shell "/sbin/nologin" \
+    --no-create-home \
+    --uid "${UID}" \
+    "${USER}"
+
+
+WORKDIR /app
+
+COPY ./ .
+
+# We no longer need to use the x86_64-unknown-linux-musl target
 RUN cargo build --release
 
-# Run the binary
-CMD ["./target/release/service-a"]
+####################################################################################################
+## Final image
+####################################################################################################
+FROM debian:bookworm-slim
 
+# Import from builder.
+COPY --from=builder /etc/passwd /etc/passwd
+COPY --from=builder /etc/group /etc/group
+
+WORKDIR /app
+
+# Copy our build
+COPY --from=builder /app/target/release/service-a ./
+
+# Use an unprivileged user.
+USER app_user:app_user
+EXPOSE 3000
+CMD ["/app/service-a"]
