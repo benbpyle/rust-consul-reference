@@ -15,11 +15,17 @@ struct Prefix {
 
 #[tokio::main]
 async fn main() {
+    tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::INFO)
+        .json()
+        .with_target(false)
+        .without_time()
+        .init();
     let port = std::env::var("PORT").expect("PORT is required");
     let host = format!("127.0.0.1:{}", port);
     let app = Router::new().route("/", get(handler));
     let listener = tokio::net::TcpListener::bind(host).await.unwrap();
-    tracing::debug!("Up and running ... listening on {}", port);
+    tracing::info!("Up and running ... listening on {}", port);
     axum::serve(listener, app).await.unwrap();
 }
 
@@ -37,6 +43,7 @@ async fn handler(Query(q): Query<Prefix>) -> Result<impl IntoResponse, axum::htt
     let url = format!("{}/route?p={}", host, prefix);
     let response = reqwest::get(url).await;
 
+    tracing::info!("(Request)={}", prefix);
     match response {
         Ok(r) => {
             if r.status().is_success() {

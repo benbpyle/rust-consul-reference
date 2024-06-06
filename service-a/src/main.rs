@@ -14,12 +14,17 @@ pub struct Prefix {
 
 #[tokio::main]
 async fn main() {
-    tracing::fmt().json().init();
+    tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::INFO)
+        .json()
+        .with_target(false)
+        .without_time()
+        .init();
     let port = std::env::var("PORT").expect("PORT is required");
     let host = format!("127.0.0.1:{}", port);
     let app = Router::new().route("/route", get(handler));
     let listener = tokio::net::TcpListener::bind(host).await.unwrap();
-    tracing::debug!("Up and running ... listening on {}", port);
+    tracing::info!("Up and running ... listening on {}", port);
     axum::serve(listener, app).await.unwrap();
 }
 
@@ -33,6 +38,7 @@ async fn handler(query: Query<Prefix>) -> Result<impl IntoResponse, StatusCode> 
         prefix = String::from("Unknown");
     }
 
+    tracing::info!("(Request)={}", prefix);
     let m: Model = Model {
         key_two: format!("({})Field 2", prefix),
         key_one: format!("({})Field 1", prefix),
