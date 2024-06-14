@@ -39,5 +39,5 @@ COPY --from=builder /app/target/release/service-a ./
 
 # Use an unprivileged user.
 USER app_user:app_user
-EXPOSE 3000
+EXPOSE 8080
 CMD ["/app/service-a"]

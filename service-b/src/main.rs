@@ -26,13 +26,15 @@ async fn main() {
         .with_target(false)
         .without_time()
         .init();
-    let port = std::env::var("PORT").expect("PORT is required");
-    let host = format!("0.0.0.0:{}", port);
+
+    let bind_address = std::env::var("BIND_ADDRESS").expect("BIND_ADDRESS is required");
     let app = Router::new()
         .route("/", get(handler))
         .route("/health", get(health));
-    let listener = tokio::net::TcpListener::bind(host).await.unwrap();
-    tracing::info!("Up and running ... listening on {}", port);
+    let listener = tokio::net::TcpListener::bind(bind_address.clone())
+        .await
+        .unwrap();
+    tracing::info!("Up and running ... listening on {}", bind_address);
     axum::serve(listener, app).await.unwrap();
 }
 
@@ -62,7 +64,7 @@ async fn handler(Query(q): Query<Prefix>) -> Result<impl IntoResponse, axum::htt
                     }
                 }
             } else {
-                tracing::error!("Bad request");
+                tracing::error!("Bad request={:?}", r.status());
                 Err(StatusCode::BAD_REQUEST)
             }
         }
