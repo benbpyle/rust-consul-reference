@@ -1,0 +1,30 @@
+services:
+  service-a:
+    container_name: service-a
+    # image: service-a
+    build: service-a/
+    ports:
+      - "3002:3000"
+    environment:
+      BIND_ADDRESS: "0.0.0.0:3000"
+  service-c:
+    container_name: service-c
+    # image: service-c
+    build: service-c
+    ports:
+      - "3001:3000"
+    environment:
+      BIND_ADDRESS: "0.0.0.0:3000"
+  service-b:
+    container_name: service-b
+    build: service-b
+    # image: service-b
+    ports:
+      - "3000:3000"
+    environment:
+      BIND_ADDRESS: "0.0.0.0:3000"
+      SERVICE_A_URL: "http://service-a:3000"
+      SERVICE_C_URL: "http://service-c:3000"
+    depends_on:
+      - service-a
+      - service-c
